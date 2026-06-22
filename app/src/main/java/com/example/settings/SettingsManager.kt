@@ -86,6 +86,7 @@ class SettingsManager(private val context: Context) {
         val INCLUDE_BASMALAH = booleanPreferencesKey("include_basmalah")
         val ACTIVE_GENERATION_RECITER_ID = stringPreferencesKey("active_generation_reciter_id")
         val BACKGROUND_KEYWORDS = stringSetPreferencesKey("background_keywords")
+        val CUSTOM_CURATED_CLIPS = stringPreferencesKey("custom_curated_clips")
     }
 
     val pexelsApiKey: Flow<String> = context.dataStore.data.map { it[PEXELS_API_KEY] ?: "" }
@@ -400,5 +401,11 @@ class SettingsManager(private val context: Context) {
 
     suspend fun setBackgroundKeywords(value: Set<String>) {
         context.dataStore.edit { it[BACKGROUND_KEYWORDS] = value }
+    }
+
+    val customCuratedClips: Flow<String> = context.dataStore.data.map { it[CUSTOM_CURATED_CLIPS] ?: "[]" }
+    
+    suspend fun saveCustomCuratedClips(clipsJson: String) {
+        context.dataStore.edit { it[CUSTOM_CURATED_CLIPS] = clipsJson }
     }
 }

@@ -240,6 +240,68 @@ fun PopularClipsScreen(
     var clipToDelete by remember { mutableStateOf<CuratedClip?>(null) }
     val scope = rememberCoroutineScope()
 
+    val customClipsJson by settingsManager.customCuratedClips.collectAsState(initial = "[]")
+
+    val saveCustomClipsToSettings: () -> Unit = {
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val customOnly = baseClipsList.filter { it.id.startsWith("clip_custom") }
+                val array = org.json.JSONArray()
+                customOnly.forEach { clip ->
+                    val obj = org.json.JSONObject()
+                    obj.put("id", clip.id)
+                    obj.put("reciter", clip.reciter)
+                    obj.put("reciterId", clip.reciterId)
+                    obj.put("title", clip.title)
+                    obj.put("surah", clip.surah)
+                    obj.put("ayahStart", clip.ayahStart)
+                    obj.put("ayahEnd", clip.ayahEnd)
+                    obj.put("audioUrl", clip.audioUrl)
+                    obj.put("category", clip.category)
+                    obj.put("videoQuery", clip.videoQuery)
+                    array.put(obj)
+                }
+                settingsManager.saveCustomCuratedClips(array.toString())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    LaunchedEffect(customClipsJson) {
+        if (customClipsJson.isNotBlank() && customClipsJson != "[]") {
+            try {
+                val array = org.json.JSONArray(customClipsJson)
+                val newCustomList = mutableListOf<CuratedClip>()
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    newCustomList.add(
+                        CuratedClip(
+                            id = obj.getString("id"),
+                            reciter = obj.getString("reciter"),
+                            reciterId = obj.getString("reciterId"),
+                            title = obj.getString("title"),
+                            surah = obj.getInt("surah"),
+                            ayahStart = obj.getInt("ayahStart"),
+                            ayahEnd = obj.getInt("ayahEnd"),
+                            audioUrl = obj.getString("audioUrl"),
+                            category = obj.getString("category"),
+                            videoQuery = obj.optString("videoQuery", "islamic videos")
+                        )
+                    )
+                }
+                
+                val existingIds = baseClipsList.map { it.id }.toSet()
+                val toAdd = newCustomList.filter { !existingIds.contains(it.id) }
+                if (toAdd.isNotEmpty()) {
+                    baseClipsList.addAll(toAdd)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1216,6 +1278,7 @@ fun PopularClipsScreen(
                                                 videoQuery = if (backgroundKeywords.isNotEmpty()) backgroundKeywords.random() else "islamic architecture nature"
                                             )
                                         )
+                                        saveCustomClipsToSettings()
                                         showAddDialog = false
                                         Toast.makeText(context, if (isArabic) "تمت إضافة المقطع بنجاح!" else "Clip added successfully", Toast.LENGTH_SHORT).show()
                                     } else {
@@ -1249,6 +1312,7 @@ fun PopularClipsScreen(
                                         videoQuery = if (backgroundKeywords.isNotEmpty()) backgroundKeywords.random() else "islamic architecture nature"
                                     )
                                 )
+                                saveCustomClipsToSettings()
                                 showAddDialog = false
                                 Toast.makeText(context, if (isArabic) "تمت إضافة المقطع الرائج لقائمتك بنجاح!" else "Clip added successfully", Toast.LENGTH_SHORT).show()
                             }
@@ -1336,6 +1400,7 @@ fun PopularClipsScreen(
                 Button(
                     onClick = {
                         baseClipsList.remove(clipInfo)
+                        saveCustomClipsToSettings()
                         clipToDelete = null
                         if (selectedClip?.id == clipInfo.id) {
                             selectedClip = null
