@@ -181,6 +181,7 @@ class VideoGenerator {
         threadError = null
 
         try {
+            // FFmpeg init removed, YoutubeDL init decoupled to prevent crash
             com.yausername.youtubedl_android.YoutubeDL.getInstance().init(context.applicationContext)
             SystemDiagnosticTracker.addLog("YOUTUBEDL", "تم تهيئة مكتبة Yt-dlp بنجاح")
         } catch (e: Exception) {

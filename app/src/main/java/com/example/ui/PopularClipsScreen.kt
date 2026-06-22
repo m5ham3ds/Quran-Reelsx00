@@ -811,6 +811,7 @@ fun PopularClipsScreen(
                                                     if (isSocialUrl) {
                                                         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
                                                             try {
+                                                                // FFmpeg init removed, YoutubeDL init decoupled to prevent crash
                                                                 com.yausername.youtubedl_android.YoutubeDL.getInstance().init(context.applicationContext)
                                                                 val request = com.yausername.youtubedl_android.YoutubeDLRequest(clip.audioUrl)
                                                                 request.addOption("-g")
